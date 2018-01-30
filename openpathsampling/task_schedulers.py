@@ -23,9 +23,8 @@ class DaskTaskScheduler(TaskScheduler):
         self.client = client
 
     def wrap_task(self, task, *args, **kwargs):
-        return self.client.submit(task, *args, **kwargs)
+        return self.client.submit(task, *args, pure=False, **kwargs)
 
     def wrap_hook(self, hook, *args, **kwargs):
-        task = self.client.submit(task, *args, **kwargs)
-        return dask.distributed.fire_and_forget(task)
+        return self.client.submit(hook, *args, **kwargs)
 
