@@ -10,7 +10,7 @@ These hooks group several methods together for use as part of a
 calculations or output at several points in the simulation.
 """
 
-class PathSimulatorHook(StorableNamedObject):
+class PathSimulatorHook(object):
     """Superclass for PathSimulator hooks.
 
     This implementation is a do-nothing hook. Subclasses should subclass the

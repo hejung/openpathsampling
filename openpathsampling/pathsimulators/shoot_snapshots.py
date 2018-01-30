@@ -173,9 +173,13 @@ class ShootFromSnapshotsSimulation(PathSimulator):
             for step in range(n_per_snapshot):
                 step_number = self.step
                 step_info = (snap_num, n_snapshots, step, n_per_snapshot)
+                state = start_snap
+                state = None
+                sim = self
+                sim = None
                 scheduler.wrap_hook(self.run_hooks, 'before_step',
-                                    sim=self, step_number=step_number,
-                                    step_info=step_info, state=start_snap)
+                                    sim=sim, step_number=step_number,
+                                    step_info=step_info, state=state)
 
                 if as_chain:
                     start_snap = self.randomizer(start_snap)

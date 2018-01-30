@@ -54,4 +54,3 @@ class TestDaskTaskScheduler(object):
         # TODO: modify hooks to allow stored state as output?
         hook = MockHook()
         self.sched.wrap_hook(hook.hook, 1, kwargument=2)
-
