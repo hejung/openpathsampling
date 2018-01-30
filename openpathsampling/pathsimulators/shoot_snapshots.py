@@ -108,7 +108,41 @@ class ShootFromSnapshotsSimulation(PathSimulator):
         self.attach_hook(hooks.StorageHook())
         self.attach_hook(hooks.ShootFromSnapshotsOutputHook())
 
-    def run(self, n_per_snapshot, as_chain=False):
+    def single_shot(self, start_snap):
+        """Main task for ShootFromSnapshots.
+
+        Parameters
+        ----------
+        start_snap : :class:`.Snapshot`
+            initial snapshot from which to shoot
+
+        Returns
+        -------
+        :class:`.MCStep`
+            results of the single move
+        """
+        sample_set = paths.SampleSet([
+            paths.Sample(replica=0,
+                         trajectory=paths.Trajectory([start_snap]),
+                         ensemble=self.starting_ensemble)
+        ])
+        sample_set.sanity_check()
+
+        new_pmc = self.mover.move(sample_set)
+        samples = new_pmc.results
+        new_sample_set = sample_set.apply_samples(samples)
+
+        mcstep = MCStep(
+            simulation=self,
+            mccycle=self.step,
+            previous=sample_set,
+            active=new_sample_set,
+            change=new_pmc
+        )
+        return mcstep
+
+
+    def run(self, n_per_snapshot, as_chain=False, scheduler=None):
         """Run the simulation.
 
         Parameters
@@ -121,10 +155,15 @@ class ShootFromSnapshotsSimulation(PathSimulator):
             input to the modifier is the previous (modified) snapshot.
             Useful for modifications that can't cover the whole range from a
             given snapshot.
+        scheduler : :class:`.TaskScheduler`
+            scheduler for the simulation tasks; default ``None`` is serial
+            simulation
         """
         self.step = 0
         snap_num = 0
         n_snapshots = len(self.initial_snapshots)
+        if scheduler is None:
+            scheduler = paths.task_schedulers.TaskScheduler()  # default
         self.run_hooks('before_simulation', sim=self)
         for snapshot in self.initial_snapshots:
             # before_snapshot
@@ -133,39 +172,22 @@ class ShootFromSnapshotsSimulation(PathSimulator):
             for step in range(n_per_snapshot):
                 step_number = self.step
                 step_info = (snap_num, n_snapshots, step, n_per_snapshot)
-                self.run_hooks('before_step', sim=self,
-                               step_number=step_number, step_info=step_info,
-                               state=start_snap)
+                scheduler.wrap_hook(self.run_hooks, 'before_step',
+                                    sim=self, step_number=step_number,
+                                    step_info=step_info, state=start_snap)
 
                 if as_chain:
                     start_snap = self.randomizer(start_snap)
                 else:
                     start_snap = self.randomizer(snapshot)
 
-                sample_set = paths.SampleSet([
-                    paths.Sample(replica=0,
-                                 trajectory=paths.Trajectory([start_snap]),
-                                 ensemble=self.starting_ensemble)
-                ])
-                sample_set.sanity_check()
+                # main task is in here
+                mcstep = scheduler.wrap_task(self.single_shot, start_snap)
 
-                # shoot_snapshot_task (start)
-                new_pmc = self.mover.move(sample_set)
-                samples = new_pmc.results
-                new_sample_set = sample_set.apply_samples(samples)
-
-                mcstep = MCStep(
-                    simulation=self,
-                    mccycle=self.step,
-                    previous=sample_set,
-                    active=new_sample_set,
-                    change=new_pmc
-                )
-                # shoot_snapshot_task (end)
-
-                self.run_hooks('after_step', sim=self,
-                               step_number=step_number, step_info=step_info,
-                               state=start_snap, results=mcstep)
+                scheduler.wrap_hook(self.run_hooks, 'after_step', sim=self,
+                                    step_number=step_number,
+                                    step_info=step_info, state=start_snap,
+                                    results=mcstep)
 
                 self.step += 1
             # after_snapshot
