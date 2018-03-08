@@ -52,6 +52,22 @@ class DaskTaskScheduler(TaskScheduler):
         print task
         return self.client.submit(task, *args, pure=False, **kwargs)
 
+    def wrap_method(self, instance, method_name):
+        # need wrap_method because we typically can't pickle
+        # sim.single_step (because of some weird issues in cloudpickling of
+        # CVs)
+        def run_step(self, serialized_instance, method_name, *args,
+                     **kwargs):
+            # deserialize instance
+            # method = getattr(deserialized, method_name)
+            # method(*args, **kwargs)
+            pass
+
+        # serialize instance
+        # wrap the run step method
+        # self.client.submit(
+
+
     def wrap_hook(self, hook, *args, **kwargs):
         return self.client.submit(hook, *args, **kwargs)
 
