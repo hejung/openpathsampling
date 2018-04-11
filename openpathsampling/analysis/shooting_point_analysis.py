@@ -35,7 +35,7 @@ class TransformedDict(collections.MutableMapping):
         del self.hash_representatives[hashed]
 
     def __iter__(self):
-        return iter(self.store)
+        return iter(self.hash_representatives.values())
 
     def __len__(self):
         return len(self.store)
@@ -53,8 +53,8 @@ class TransformedDict(collections.MutableMapping):
         velocities, the resulting mapping would be invalid. It is up to the
         user to avoid such invalid remappings.
         """
-        return TransformedDict(new_hash, 
-                               {self.hash_representatives[k]: self.store[k] 
+        return TransformedDict(new_hash,
+                               {self.hash_representatives[k]: self.store[k]
                                 for k in self.store})
 
 
@@ -66,7 +66,7 @@ class SnapshotByCoordinateDict(TransformedDict):
     """
     def __init__(self, *args, **kwargs):
         hash_fcn = lambda x : x.coordinates.tostring()
-        super(SnapshotByCoordinateDict, self).__init__(hash_fcn, 
+        super(SnapshotByCoordinateDict, self).__init__(hash_fcn,
                                                        *args, **kwargs)
 
 
@@ -235,7 +235,7 @@ class ShootingPointAnalysis(SnapshotByCoordinateDict):
         except TypeError:
             ndim = 1
         if ndim > 2 or ndim < 1:
-            raise RuntimeError("Histogram key dimension {0} > 2 or {0} < 1 " 
+            raise RuntimeError("Histogram key dimension {0} > 2 or {0} < 1 "
                                + "(key: {1})".format(ndim, key))
         return ndim
 
