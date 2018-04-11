@@ -3,6 +3,7 @@ import logging
 
 import openpathsampling as paths
 from .path_simulator import PathSimulator, MCStep
+from . import hooks
 from ..ops_logging import initialization_logging
 
 
@@ -98,6 +99,10 @@ class PathSampling(PathSimulator):
         obj._mover = paths.PathSimulatorMover(obj.root_mover, obj)
 
         return obj
+
+    def attach_default_hooks(self):
+        # TODO: do we need other hooks here?
+        self.attach_hook(hooks.StorageHook())
 
     @property
     def current_step(self):
@@ -195,13 +200,23 @@ class PathSampling(PathSimulator):
         # if self.storage is not None:
         #     n_samples = len(self.storage.snapshots)
         #     cvs = list(self.storage.cvs)
-
         initial_time = time.time()
+
+
+        hook_state = None
+        self.run_hooks('before_simulation', sim=self)
 
         for nn in range(n_steps):
             self.step += 1
+            step_number = self.step
+            # FIXME: TODO: what do we want in step-info??
+            step_info = None
+            self.run_hooks('before_step', sim=self, step_number=step_number,
+                           step_info=step_info, state=self.sample_set)
             logger.info("Beginning MC cycle " + str(self.step))
             refresh = self.allow_refresh
+
+            # TODO: move this to LiveVisualizerHook
             if self.step % self.status_update_frequency == 0:
                 # do we visualize this step?
                 if self.live_visualizer is not None and mcstep is not None:
@@ -224,6 +239,7 @@ class PathSampling(PathSimulator):
                     output_stream=self.output_stream
                 )
 
+            # MCStep (start)
             time_start = time.time()
             movepath = self._mover.move(self.sample_set, step=self.step)
             samples = movepath.results
@@ -241,8 +257,11 @@ class PathSampling(PathSimulator):
                 active=new_sampleset,
                 change=movepath
             )
-
+            # MCStep (end)
             self._current_step = mcstep
+            self.sample_set = new_sampleset
+
+            # TODO: put this into StorageHook
             self.save_current_step()
 
             # if self.storage is not None:
@@ -254,11 +273,22 @@ class PathSampling(PathSimulator):
             #
             #     self.storage.steps.save(mcstep)
 
+            # TODO: this should be in the StorageHook, including sanity_check?
             if self.step % self.save_frequency == 0:
                 self.sample_set.sanity_check()
                 self.sync_storage()
 
-            self.sample_set = new_sampleset
+            hook_state = self.run_hooks('after_step', sim=self,
+                                        step_number=step_number,
+                                        step_info=step_info,
+                                        # TODO: do we want the new state here
+                                        # i.e. state after step as is right now
+                                        # or do we want something similar to shoot_snapshots
+                                        # where we use the old state == shooting snapshot
+                                        state=self.sample_set,
+                                        results=mcstep,
+                                        hook_state=hook_state
+                                        )
 
         self.sync_storage()
 
@@ -269,3 +299,4 @@ class PathSampling(PathSimulator):
             refresh=False,
             output_stream=self.output_stream
         )
+        self.run_hooks('after_simulation', sim=self)
