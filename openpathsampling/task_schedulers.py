@@ -49,7 +49,7 @@ class DaskTaskScheduler(TaskScheduler):
         self.client = client
 
     def wrap_task(self, task, *args, **kwargs):
-        print task
+        print(task)
         return self.client.submit(task, *args, pure=False, **kwargs)
 
     def wrap_method(self, instance, method_name):

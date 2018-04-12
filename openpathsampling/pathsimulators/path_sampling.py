@@ -47,6 +47,9 @@ class PathSampling(PathSimulator):
 
         initialization_logging(init_log, self,
                                ['move_scheme', 'sample_set'])
+        # TODO: move this to LiveVisualizerhook defaults?
+        # i.e. do not attach a hook on default and use status_update_freq=1
+        # as default for LiveVisulizerHooks
         self.live_visualizer = None
         self.status_update_frequency = 1
 
@@ -101,8 +104,11 @@ class PathSampling(PathSimulator):
         return obj
 
     def attach_default_hooks(self):
-        # TODO: do we need other hooks here?
         self.attach_hook(hooks.StorageHook())
+        self.attach_hook(hooks.PathSamplingOutputHook())
+        # TODO: should this be a default hook?
+        # I think it needs to be to retain the old behaviour of PathSampling
+        self.attach_hook(hooks.LiveVisualizerHook())
 
     @property
     def current_step(self):
@@ -193,62 +199,30 @@ class PathSampling(PathSimulator):
 
     def run(self, n_steps):
         mcstep = None
-
-        # cvs = list()
-        # n_samples = 0
-
-        # if self.storage is not None:
-        #     n_samples = len(self.storage.snapshots)
-        #     cvs = list(self.storage.cvs)
         initial_time = time.time()
-
-
         hook_state = None
         self.run_hooks('before_simulation', sim=self)
 
         for nn in range(n_steps):
             self.step += 1
             step_number = self.step
-            # FIXME: TODO: what do we want in step-info??
-            step_info = None
+            elapsed_total = time.time() - initial_time
+            # TODO: what do we want in step-info??
+            step_info = (nn, n_steps, elapsed_total)
             self.run_hooks('before_step', sim=self, step_number=step_number,
                            step_info=step_info, state=self.sample_set)
+
             logger.info("Beginning MC cycle " + str(self.step))
-            refresh = self.allow_refresh
-
-            # TODO: move this to LiveVisualizerHook
-            if self.step % self.status_update_frequency == 0:
-                # do we visualize this step?
-                if self.live_visualizer is not None and mcstep is not None:
-                    # do we visualize at all?
-                    self.live_visualizer.draw_ipynb(mcstep)
-                    refresh = False
-
-                elapsed = time.time() - initial_time
-
-                if nn > 0:
-                    time_per_step = elapsed / nn
-                else:
-                    time_per_step = 1.0
-
-                paths.tools.refresh_output(
-                    "Working on Monte Carlo cycle number " + str(self.step)
-                    + "\n" + paths.tools.progress_string(nn, n_steps,
-                                                         elapsed),
-                    refresh=refresh,
-                    output_stream=self.output_stream
-                )
-
             # MCStep (start)
             time_start = time.time()
             movepath = self._mover.move(self.sample_set, step=self.step)
             samples = movepath.results
             new_sampleset = self.sample_set.apply_samples(samples)
-            time_elapsed = time.time() - time_start
+            elapsed_step = time.time() - time_start
 
             # TODO: we can save this with the MC steps for timing? The bit
             # below works, but is only a temporary hack
-            setattr(movepath.details, "timing", time_elapsed)
+            setattr(movepath.details, "timing", elapsed_step)
 
             mcstep = MCStep(
                 simulation=self,
@@ -261,23 +235,9 @@ class PathSampling(PathSimulator):
             self._current_step = mcstep
             self.sample_set = new_sampleset
 
-            # TODO: put this into StorageHook
-            self.save_current_step()
-
-            # if self.storage is not None:
-            #     # I think this is done automatically when saving snapshots
-            #     # for cv in cvs:
-            #     #     n_len = len(self.storage.snapshots)
-            #     #     cv(self.storage.snapshots[n_samples:n_len])
-            #     #     n_samples = n_len
-            #
-            #     self.storage.steps.save(mcstep)
-
             # TODO: this should be in the StorageHook, including sanity_check?
             if self.step % self.save_frequency == 0:
                 self.sample_set.sanity_check()
-                self.sync_storage()
-
             hook_state = self.run_hooks('after_step', sim=self,
                                         step_number=step_number,
                                         step_info=step_info,
@@ -290,13 +250,4 @@ class PathSampling(PathSimulator):
                                         hook_state=hook_state
                                         )
 
-        self.sync_storage()
-
-        if self.live_visualizer is not None and mcstep is not None:
-            self.live_visualizer.draw_ipynb(mcstep)
-        paths.tools.refresh_output(
-            "DONE! Completed " + str(self.step) + " Monte Carlo cycles.\n",
-            refresh=False,
-            output_stream=self.output_stream
-        )
         self.run_hooks('after_simulation', sim=self)
