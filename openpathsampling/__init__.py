@@ -143,6 +143,8 @@ from .snapshot_modifier import (
 
 from .storage.storage import Storage, AnalysisStorage
 
+from . import task_schedulers
+
 from .volume import (
     Volume, VolumeCombination, VolumeFactory, VoronoiVolume,
     EmptyVolume, FullVolume, CVDefinedVolume, PeriodicCVDefinedVolume,
