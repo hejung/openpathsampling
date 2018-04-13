@@ -222,9 +222,9 @@ class ShootingPointAnalysis(SnapshotByCoordinateDict):
             label_function = lambda s : s
         results = {}
         for k in self:
-            out_key = label_function(self.hash_representatives[k])
-            counter_k = self.store[k]
-            committor = float(counter_k[state]) / sum(counter_k.values())
+            out_key = label_function(k)
+            counter_k = self[k]
+            committor = float(counter_k[state]) / sum([counter_k[s] for s in self.states])
             results[out_key] = committor
         return results
 
