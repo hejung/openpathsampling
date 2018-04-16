@@ -57,6 +57,7 @@ class OpenMMEngine(DynamicsEngine):
     _default_options = {
         'n_steps_per_frame': 10,
         'n_frames_max': 5000,
+        'platform': 'fastest'
     }
 
     base_snapshot_type = Snapshot
@@ -217,7 +218,12 @@ class OpenMMEngine(DynamicsEngine):
     @property
     def simulation(self):
         if self._simulation is None:
-            self.initialize()
+            platform_str = self.options['platform']
+            if platform_str is 'fastest':
+                platform = None
+            else:
+                platform = simtk.openmm.Platform.getPlatformByName(platform_str)
+            self.initialize(platform)
 
         return self._simulation
 
@@ -251,7 +257,7 @@ class OpenMMEngine(DynamicsEngine):
         Parameters
         ----------
         platform : str or `simtk.openmm.Platform`
-            either a string with a name of the platform a platform object
+            either a string with a name of the platform or a platform object
 
         Notes
         -----
@@ -472,7 +478,7 @@ class OpenMMEngine(DynamicsEngine):
         if position_tol is None:
             position_tol = context.getIntegrator().getConstraintTolerance()
         # default 1e-5 for velocity_tol comes from OpenMM's setVelToTemp
-        context.applyConstraints(position_tol)  
+        context.applyConstraints(position_tol)
         context.applyVelocityConstraints(velocity_tol)
         result_snap = self.current_snapshot
         if old_snap is not None:
