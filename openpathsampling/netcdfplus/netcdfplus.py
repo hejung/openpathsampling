@@ -235,6 +235,7 @@ class NetCDFPlus(netCDF4.Dataset):
                 "reading from existing file", filename)
 
         self.filename = filename
+        self.abspath = os.path.abspath(filename)
         self.fallback = fallback
 
         # this can be set to false to re-store objects present in the fallback
@@ -354,7 +355,7 @@ class NetCDFPlus(netCDF4.Dataset):
 
     @property
     def file_size(self):
-        return os.path.getsize(self.filename)
+        return os.path.getsize(self.abspath)
 
     @property
     def file_size_str(self):
