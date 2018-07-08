@@ -49,7 +49,8 @@ class PathSampling(PathSimulator):
                                ['move_scheme', 'sample_set'])
         # TODO: move this to LiveVisualizerhook defaults?
         # i.e. do not attach a hook on default and use status_update_freq=1
-        # as default for LiveVisulizerHooks
+        # as default for LiveVisulizerHooks, let the user attach a hook if needed
+        # but this would break the default behaviour
         self.live_visualizer = None
         self.status_update_frequency = 1
 
@@ -107,7 +108,7 @@ class PathSampling(PathSimulator):
         self.attach_hook(hooks.StorageHook())
         self.attach_hook(hooks.PathSamplingOutputHook())
         # TODO: should this be a default hook?
-        # I think it needs to be to retain the old behaviour of PathSampling
+        # it needs to be to retain the old behaviour of PathSampling, see above
         self.attach_hook(hooks.LiveVisualizerHook())
 
     @property

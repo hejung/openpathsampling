@@ -28,8 +28,6 @@ class PathSimulatorHook(object):
 
     def after_step(self, sim, step_number, step_info, state, results,
                    hook_state):
-        # TODO: shouldnt this at least return hook_state,
-        # such that the next hook gets a hook_state and not None?
         pass
 
     def after_simulation(self, sim):
