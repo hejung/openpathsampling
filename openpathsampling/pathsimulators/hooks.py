@@ -83,9 +83,9 @@ class ShootFromSnapshotsOutputHook(PathSimulatorHook):
         self.allow_refresh = allow_refresh
 
     def before_simulation(self, sim):
-        if self.output_stream is None:
+        if self.output_stream is not sim.output_stream:
             self.output_stream = sim.output_stream
-        if self.allow_refresh is None:
+        if self.allow_refresh is not sim.allow_refresh:
             self.allow_refresh = sim.allow_refresh
 
     def before_step(self, sim, step_number, step_info, state):
@@ -134,13 +134,13 @@ class PathSamplingOutputHook(PathSimulatorHook):
         self._refresh = True
 
     def before_simulation(self, sim):
-        if self.output_stream is None:
+        if self.output_stream is not sim.output_stream:
             self.output_stream = sim.output_stream
-        if self.allow_refresh is None:
+        if self.allow_refresh is not sim.allow_refresh:
             self.allow_refresh = sim.allow_refresh
-        if self.live_visualizer is None:
+        if self.live_visualizer is not sim.live_visualizer:
             self.live_visualizer = sim.live_visualizer
-        if self.status_update_frequency is None:
+        if self.status_update_frequency is not sim.status_update_frequency:
             self.status_update_frequency = sim.status_update_frequency
 
     def before_step(self, sim, step_number, step_info, state):
