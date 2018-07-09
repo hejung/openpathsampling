@@ -99,39 +99,6 @@ class ShootFromSnapshotsOutputHook(PathSimulatorHook):
         )
 
 
-class LiveVisualizerHook(PathSimulatorHook):
-    """
-    LiveVisualizerhook for simulation objects.
-
-    Parameters
-    ----------
-    live_visualizer : openpathsampling.StepVisualizer2D; default `None` uses
-        the simulations live_visualizer if any
-    status_update_frequency : int
-        number of steps between two refreshs of the visualization;
-        default `None` uses the simulations value (default=1 for PathSampling)
-    """
-    implemented_for = ['before_simulation', 'after_step']
-
-    def __init__(self, live_visualizer=None, status_update_frequency=None):
-        self.live_visualizer = live_visualizer
-        self.status_update_frequency = status_update_frequency
-
-    def before_simulation(self, sim):
-        if self.live_visualizer is None:
-            self.live_visualizer = sim.live_visualizer
-        if self.status_update_frequency is None:
-            self.status_update_frequency = sim.status_update_frequency
-
-    def after_step(self, sim, step_number, step_info, state, results,
-                   hook_state):
-        if step_number % self.status_update_frequency == 0:
-            # do we visualize this step?
-            if self.live_visualizer is not None and results is not None:
-                # do we visualize at all?
-                self.live_visualizer.draw_ipynb(results)
-
-
 class PathSamplingOutputHook(PathSimulatorHook):
     """
     Default (serial) output for PathSamplingSimulation objects.
@@ -148,8 +115,8 @@ class PathSamplingOutputHook(PathSimulatorHook):
     allow_refresh : bool
         whether to allow refresh (see :meth:`.refresh_output`); default
         ``None`` uses the simulation's value
-    live_visualizer : :class:`openpathsampling.StepVisualizer2D`; default `None` uses
-        the simulations live_visualizer if any
+    live_visualizer : :class:`openpathsampling.StepVisualizer2D`;
+        default `None` uses the simulations live_visualizer if any
     status_update_frequency : int
         number of steps between two refreshs of the visualization;
         default `None` uses the simulations value (default=1 for PathSampling)
