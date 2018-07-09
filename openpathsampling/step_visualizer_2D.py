@@ -86,7 +86,10 @@ class StepVisualizer2D(object):
             self.ax = self.fig.axes[0].twinx()
             self.ax.cla()
         else:
-            self.fig, self.ax = plt.subplots()
+            if self.fig is None:
+                self.fig, self.ax = plt.subplots()
+            else:
+                self.ax.cla()
 
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
@@ -108,7 +111,7 @@ class StepVisualizer2D(object):
             IPython.display.clear_output(wait=True)
             fig = self.draw(mcstep)
             IPython.display.display(fig);
-            plt.close() # prevents crap in the output
+            plt.close('all')  # prevents crap in the output
 
     def draw_png(self, mcstep):
         pass
