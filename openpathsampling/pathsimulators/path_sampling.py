@@ -47,9 +47,9 @@ class PathSampling(PathSimulator):
 
         initialization_logging(init_log, self,
                                ['move_scheme', 'sample_set'])
-        # TODO: move this to LiveVisualizerhook defaults?
+        # TODO: move this to PathSamplingOutputHook defaults?
         # i.e. do not attach a hook on default and use status_update_freq=1
-        # as default for LiveVisulizerHooks, let the user attach a hook if needed
+        # as default for PathSamplingOutputHook, let the user modify hook if needed?
         # but this would break the default behaviour
         self.live_visualizer = None
         self.status_update_frequency = 1
@@ -107,9 +107,6 @@ class PathSampling(PathSimulator):
     def attach_default_hooks(self):
         self.attach_hook(hooks.StorageHook())
         self.attach_hook(hooks.PathSamplingOutputHook())
-        # TODO: should this be a default hook?
-        # it needs to be to retain the old behaviour of PathSampling, see above
-        self.attach_hook(hooks.LiveVisualizerHook())
 
     @property
     def current_step(self):
@@ -237,6 +234,7 @@ class PathSampling(PathSimulator):
             self.sample_set = new_sampleset
 
             # TODO: this should be in the StorageHook, including sanity_check?
+            # every PathSimulator has a sample_set (?)
             if self.step % self.save_frequency == 0:
                 self.sample_set.sanity_check()
             hook_state = self.run_hooks('after_step', sim=self,

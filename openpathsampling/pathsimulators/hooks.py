@@ -135,8 +135,10 @@ class LiveVisualizerHook(PathSimulatorHook):
 class PathSamplingOutputHook(PathSimulatorHook):
     """
     Default (serial) output for PathSamplingSimulation objects.
-
     Updates every time a new MCStep is undertaken.
+
+    Also takes care of LiveVisualization using the
+    :class:`openpathsampling.StepVisualizer2D` if set.
 
     Parameters
     ----------
@@ -146,27 +148,53 @@ class PathSamplingOutputHook(PathSimulatorHook):
     allow_refresh : bool
         whether to allow refresh (see :meth:`.refresh_output`); default
         ``None`` uses the simulation's value
+    live_visualizer : :class:`openpathsampling.StepVisualizer2D`; default `None` uses
+        the simulations live_visualizer if any
+    status_update_frequency : int
+        number of steps between two refreshs of the visualization;
+        default `None` uses the simulations value (default=1 for PathSampling)
     """
-    implemented_for = ['before_simulation', 'before_step', 'after_simulation']
+    implemented_for = ['before_simulation', 'before_step',
+                       'after_step', 'after_simulation']
 
-    def __init__(self, output_stream=None, allow_refresh=None):
+    def __init__(self, output_stream=None, allow_refresh=None,
+                 live_visualizer=None, status_update_frequency=None):
         self.output_stream = output_stream
         self.allow_refresh = allow_refresh
+        self.live_visualizer = live_visualizer
+        self.status_update_frequency = status_update_frequency
+        # do not refresh if we plotted last step with LiveVisualizer2D
+        self._refresh = True
 
     def before_simulation(self, sim):
         if self.output_stream is None:
             self.output_stream = sim.output_stream
         if self.allow_refresh is None:
             self.allow_refresh = sim.allow_refresh
+        if self.live_visualizer is None:
+            self.live_visualizer = sim.live_visualizer
+        if self.status_update_frequency is None:
+            self.status_update_frequency = sim.status_update_frequency
 
     def before_step(self, sim, step_number, step_info, state):
         nn, n_steps, elapsed = step_info
         paths.tools.refresh_output(
             "Working on Monte Carlo cycle number " + str(step_number)
             + "\n" + paths.tools.progress_string(nn, n_steps, elapsed),
-            refresh=self.allow_refresh,
+            refresh=(self.allow_refresh and self._refresh),
             output_stream=self.output_stream
         )
+        # set refresh back to True (if it has been False for visualization)
+        self._refresh = True
+
+    def after_step(self, sim, step_number, step_info, state, results,
+                   hook_state):
+        if step_number % self.status_update_frequency == 0:
+            # do we visualize this step?
+            if self.live_visualizer is not None and results is not None:
+                # do we visualize at all?
+                self.live_visualizer.draw_ipynb(results)
+                self._refresh = False
 
     def after_simulation(self, sim):
         paths.tools.refresh_output(
