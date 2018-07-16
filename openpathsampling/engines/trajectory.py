@@ -104,9 +104,9 @@ class Trajectory(list, StorableObject):
     def n_snapshots(self):
         """
         Return the number of frames in the trajectory.
-        
+
         Returns
-        -------        
+        -------
         length (int) - the number of frames in the trajectory
 
         Notes
@@ -175,7 +175,7 @@ class Trajectory(list, StorableObject):
                 snap_msg += "'{2}' has no attribute '{1}'"
                 spacer = "\n                "
                 msg = (std_msg + spacer + snap_msg).format(
-                    str(self.__class__.__name__), 
+                    str(self.__class__.__name__),
                     item,
                     snapshot_class.__name__
                 )
@@ -564,8 +564,9 @@ class Trajectory(list, StorableObject):
         box_vectors = self.box_vectors
         # box_vectors is a list with an entry for each frame of the traj
         # if they're all None, we return None, not [None, None, ..., None]
-        if not np.any(box_vectors):
-            box_vectors = None
+        if box_vectors is not None:
+            if not np.any([np.array(v) for v in box_vectors]):
+                box_vectors = None
 
         traj.unitcell_vectors = box_vectors
         return traj
