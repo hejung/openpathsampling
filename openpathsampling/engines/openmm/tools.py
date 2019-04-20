@@ -3,7 +3,9 @@ import numpy as np
 import simtk.unit as u
 
 from .snapshot import Snapshot
-from .topology import Topology, MDTrajTopology
+from ..topology import Topology
+# TODO: temprorary hack to replace the MDTrajTopology with the new combined topology for testing
+from ..topology import MDTopology as MDTrajTopology
 from openpathsampling.engines import Trajectory, NoEngine, SnapshotDescriptor
 
 from simtk.openmm.app.internal.unitcell import reducePeriodicBoxVectors
