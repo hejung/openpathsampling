@@ -560,8 +560,77 @@ class MDTrajFunctionCV(CoordinateFunctionCV):
     def _eval(self, items):
         trajectory = peng.Trajectory(items)
 
-        t = trajectory_to_mdtraj(trajectory, self.topology.mdtraj)
+        t = trajectory.to_mdtraj(self.topology.mdtraj)
         return self.cv_callable(t, **self.kwargs)
+
+    @property
+    def mdtraj_function(self):
+        return self.cv_callable
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'f': ObjectJSON.callable_to_dict(self.f),
+            'topology': self.topology,
+            'kwargs': self.kwargs,
+            'cv_requires_lists': self.cv_requires_lists,
+            'cv_wrap_numpy_array': self.cv_wrap_numpy_array,
+            'cv_scalarize_numpy_singletons': self.cv_scalarize_numpy_singletons
+        }
+
+
+class MDAnalysisFunctionCV(CoordinateFunctionCV):
+    """Make `CollectiveVariable` from `f` that takes MDAnalysis.Universe as input.
+
+    This is identical to FunctionCV except that the function is called with
+    an :class:`MDAnalysis.Universe` object instead of the
+    :class:`openpathsampling.Trajectory` one using
+    `f(traj.to_analysis(), **kwargs)`
+
+    """
+
+    def __init__(self,
+                 name,
+                 f,
+                 topology,
+                 cv_requires_lists=True,
+                 cv_wrap_numpy_array=True,
+                 cv_scalarize_numpy_singletons=True,
+                 **kwargs
+                 ):
+        """
+        Parameters
+        ----------
+        name : str
+        f
+        topology : :obj:`openpathsampling.engines.topology.MDTopology`
+            the topology wrapper from OPS that contains the MDAnalysi topology
+        cv_requires_lists
+        cv_wrap_numpy_array
+        cv_scalarize_numpy_singletons
+        scalarize_numpy_singletons : bool, default: True
+            If `True` then arrays of length 1 will be treated as array with one
+            dimension less. e.g. `[[1], [2], [3]]` will be turned into
+            `[1, 2, 3]`. This can be useful, when your function returns only
+            a single value in an array.
+
+        """
+        super(MDAnalysisFunctionCV, self).__init__(
+            name,
+            f,
+            cv_requires_lists=cv_requires_lists,
+            cv_wrap_numpy_array=cv_wrap_numpy_array,
+            cv_scalarize_numpy_singletons=cv_scalarize_numpy_singletons,
+            **kwargs
+        )
+
+        self.topology = topology
+
+    def _eval(self, items):
+        trajectory = peng.Trajectory(items)
+
+        u = trajectory.to_mdanalysis(self.topology.mdanalysis)
+        return self.cv_callable(u, **self.kwargs)
 
     @property
     def mdtraj_function(self):

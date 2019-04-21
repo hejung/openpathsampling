@@ -5,6 +5,7 @@
 
 import numpy as np
 import mdtraj as md
+import MDAnalysis as mda
 import simtk.unit as u
 
 from openpathsampling.netcdfplus import StorableObject, LoaderProxy
@@ -554,9 +555,11 @@ class Trajectory(list, StorableObject):
             raise ValueError("Cannot convert zero-length trajectory "
                              + "to MDTraj")
         if topology is None:
-            # TODO: maybe add better error output?
-            # if AttributeError here, engine doesn't support mdtraj
-            topology = snap.engine.mdtraj_topology
+            try:
+                # if AttributeError here, topology doesn't support mdtraj
+                topology = snap.engine.topology.mdtraj
+            except AttributeError:
+                raise ValueError("Trajectory does not contain a MDTopology.")
 
         output = self.xyz
 
@@ -569,6 +572,53 @@ class Trajectory(list, StorableObject):
 
         traj.unitcell_vectors = box_vectors
         return traj
+
+    def to_mdanalysis(self, topology=None):
+        """
+        Construct a MDAnalysis.Universe from the trajectory itself.
+
+        Parameters
+        ----------
+        topology - :class:`MDAnalysis.core.topology.Topology`
+            If not None this topology will be used to construct the mdtraj
+            objects otherwise the topology object will be taken from the
+            configurations in the trajectory snapshots.
+
+        Returns
+        -------
+        :class:`MDAnalysis.Universe`
+            a universe containing this trajectory
+
+        Notes
+        -----
+        If the OPS trajectory is zero-length (has no snapshots), then this
+        fails. OPS cannot currently convert zero-length trajectories,
+        because an OPS zero-length trajectory cannot determine its topology.
+
+        """
+        try:
+            snap = self[0]
+        except IndexError:
+            raise ValueError("Cannot convert zero-length trajectory "
+                             + "to MDAnalysis")
+        if topology is None:
+            try:
+                # if AttributeError here, topology doesn't support mdanalysis
+                topology = snap.engine.topology.mdanalysis
+            except AttributeError:
+                raise ValueError("Trajectory does not contain a MDTopology.")
+
+        output = self.xyz * 10.  # MDAnalysis uses Angstroem
+
+        u = mda.Universe(output, topology)
+        box_vectors = self.box_vectors
+        # box_vectors is a list with an entry for each frame of the traj
+        # if they're all None, we skip setting them altogether
+        if np.any(box_vectors):
+            for vects, ts in zip(box_vectors, u.trajectory):
+                ts.triclinic_dimensions = vects * 10.  # Angstroem!
+
+        return u
 
     @property
     def topology(self):

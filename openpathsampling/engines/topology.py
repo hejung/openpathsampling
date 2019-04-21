@@ -35,7 +35,7 @@ def make_martini_bead_elements():
 # -> element name is the short hand for the bead suffixed by ' MARTINI bead',
 #    e.g. `P5 MARTINI bead' or 'Qd MARTINI bead'
 # -> element mass is correct, i.e. 72 for normal beads and 45 for rings
-#    for now radius is 0.0 because it depends on the interacting bead type
+# -> for now radius is 0.0 because it depends on the interacting bead type
 #    TODO: we could use self interaction values for LJ as radius?
 martini_beads = [
                  # tuple is (number, symbol, mass, radius)
