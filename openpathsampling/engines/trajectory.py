@@ -610,7 +610,7 @@ class Trajectory(list, StorableObject):
 
         output = self.xyz * 10.  # MDAnalysis uses Angstroem
 
-        u = mda.Universe(output, topology)
+        u = mda.Universe(topology, output)
         box_vectors = self.box_vectors
         # box_vectors is a list with an entry for each frame of the traj
         # if they're all None, we skip setting them altogether
