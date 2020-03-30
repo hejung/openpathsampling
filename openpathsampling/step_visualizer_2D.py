@@ -88,7 +88,14 @@ class StepVisualizer2D(object):
             self.ax = self.fig.axes[0].twinx()
             self.ax.cla()
         else:
+            # create empty figure and axis
             self.fig, self.ax = plt.subplots()
+            # set the empty axis and figure as our new 'background'
+            # this avoids flickering if we always recreate the figure
+            self.background = self.fig
+            self._save_bg_axes = self.background.axes
+            # create a copy axis to draw on
+            self.ax = self.fig.axes[0].twinx()
 
         self.ax.set_xlim(self.xlim)
         self.ax.set_ylim(self.ylim)
