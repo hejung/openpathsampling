@@ -90,7 +90,7 @@ class TestGromacsEngine(object):
         self.engine = Engine(gro="conf.gro",
                              mdp="md.mdp",
                              top="topol.top",
-                             options={'mdrun_args': '-nt 1'},
+                             options={"mdrun_args": "-nt 1"},
                              base_dir=self.test_dir,
                              prefix="project")
 

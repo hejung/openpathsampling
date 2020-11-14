@@ -157,7 +157,7 @@ class ExternalEngine(DynamicsEngine):
         self.sleep_ms = self.default_sleep_ms
         self.start_time = None
         self.first_frame_in_file = first_frame_in_file
-        self._traj_num = -1
+        #self._traj_num = -1
         self._current_snapshot = template
         self.n_frames_since_start = None
         self.internalized_engine = _InternalizedEngineProxy(self)
@@ -236,7 +236,7 @@ class ExternalEngine(DynamicsEngine):
 
     def start(self, snapshot=None):
         super(ExternalEngine, self).start(snapshot)
-        self._traj_num += 1
+        #self._traj_num += 1
         self.frame_num = 0
         self.n_frames_since_start = 0
         file_prefix = self.filename_setter()
