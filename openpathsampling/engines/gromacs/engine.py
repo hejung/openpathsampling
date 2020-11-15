@@ -370,8 +370,8 @@ class GromacsEngine(ExternalEngine):
         cmd = self.MDRUN_CMD.format(e=self, mdrun_args=self.options['mdrun_args'])
         return cmd
 
-    def randomize_velocities(self, snapshot, beta=None, subset_mask=None):
-        if subset_mask is not None:
+    def randomize_velocities(self, snapshot, beta=None, subset=None):
+        if subset is not None:
             raise NotImplementedError("Selecting a subset of atoms is not supported.")
         if beta is not None:
             raise NotImplementedError("Use the mdp file to set gen-temp.")
